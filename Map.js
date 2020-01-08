@@ -6,7 +6,6 @@ import {
     Text,
     View,
     Linking,
-    Button,
     StyleSheet,
     AsyncStorage,
     TouchableHighlight, TouchableOpacity
@@ -14,6 +13,7 @@ import {
 import Constants from "expo-constants";
 import * as Location from "expo-location";
 import * as Permissions from "expo-permissions";
+import { Button } from 'react-native-elements';
 import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Modal2 from './Modal'
@@ -188,78 +188,99 @@ export default class Maps extends Component {
 
     modal(place) {
         return (
-                <Modal
-                    transparent={true}
-                    backdropColor={"green"}
-                    backdropOpacity={1}
-                    animationType={"slide"}
-                    visible={this.state.visible}
-                    onRequestClose={() => {
-                        this.setModalVisible(false)
-                    }}
+            <Modal
+                transparent={true}
+                backdropColor={"green"}
+                backdropOpacity={1}
+                animationType={"slide"}
+                visible={this.state.visible}
+                onRequestClose={() => {
+                    this.setModalVisible(false)
+                }}
+            >
+                <TouchableOpacity
+                    style={styles.container}
+                    activeOpacity={1}
+                    onPressOut={() => { this.setModalVisible(false) }}
                 >
-                    <TouchableOpacity
-                        style={styles.container}
-                        activeOpacity={1}
-                        onPressOut={() => { this.setModalVisible(false) }}
-                    >
 
-                        <View style={styles.containertwo}>
+                    <View style={styles.containertwo}>
 
 
-                            <View style={{ flex: 1, flexDirection: 'row' }}>
+                        <View style={{ flex: 1, flexDirection: 'row' }}>
+                            <View style={{
+                                flex: 1,
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                alignItems: 'stretch',
+                            }}>
+                                <View style={{ height: 25, backgroundColor: 'steelblue' }} >
+                                    <Text style={{ fontWeight: 'bold', color: 'white' }}>
+                                        <Icon
+                                            name="map-marker"
+                                            size={24}
+                                            color="white"
+                                        />
+                                        {' Address'}
+                                    </Text>
+                                </View>
+                                <View style={{ height: 25, backgroundColor: 'steelblue' }} >
+                                    <Text style={{ fontWeight: 'bold', color: 'white' }}>
+                                        CITY_DISTRICT
+                                    </Text>
+                                </View>
+                                <View style={{ height: 25, backgroundColor: 'steelblue' }} >
+                                    <Text style={{ fontWeight: 'bold', color: 'white' }}>
+                                        <Icon
+                                            name="timer"
+                                            size={24}
+                                            color="white"
+                                        />
+                                        {' Max_Hours'}
+                                    </Text>
+                                </View>
+                                <View style={{ width: 85, backgroundColor: 'steelblue' }} >
+
+                                    <Text style={{ fontWeight: 'bold', color: 'white' }}>
+                                        <Icon
+                                            name="map-marker-distance"
+                                            size={24}
+                                            color="white"
+                                        />
+                                        {' Distance'}
+                                    </Text>
+                                </View>
+
+                            </View>
+                            <View style={{ width: 100, height: 100 }} >
                                 <View style={{
                                     flex: 1,
                                     flexDirection: 'column',
                                     justifyContent: 'center',
                                     alignItems: 'stretch',
-                                }}>
-                                    <View style={{ height: 40, backgroundColor: 'powderblue' }} >
-                                        <Text style={styles.TextStyle}>
-                                            ADDRESS
-                                    </Text>
-                                    </View>
-                                    <View style={{ height: 20, backgroundColor: 'skyblue' }} >
-                                        <Text style={styles.TextStyle}>
-                                            CITY_DISTRICT
-                                    </Text>
-                                    </View>
-                                    <View style={{ height: 20, backgroundColor: 'steelblue' }} >
-                                        <Text style={styles.TextStyle}>
-                                            MAX_HOURS
-                                    </Text>
-                                    </View>
-                                    <View style={{ height: 20, backgroundColor: 'powderblue' }} >
-                                        <Text style={styles.TextStyle}>
-                                            OTHER_INFO
-                                    </Text>
-                                    </View>
-
+                                    height: 200,
+                                }}><Button
+                                        icon={
+                                            <Icon
+                                                name="directions"
+                                                size={24}
+                                                color="white"
+                                            />
+                                        }
+                                        title=" Direction"
+                                        onPress={() => Alert.alert('Cannot press this one')}
+                                    />
                                 </View>
-                                <View style={{ width: 100, height: 50, backgroundColor: 'steelblue' }} >
-                                    <View style={{
-                                        flex: 1,
-                                        flexDirection: 'column',
-                                        justifyContent: 'center',
-                                        alignItems: 'stretch',
-                                    }}><Button
-                                            title="Show Direction" color="#ff5c5c"
-                                            onPress={() => Alert.alert('Cannot press this one')}
-                                        />
-                                        <View style={{ height: 20, backgroundColor: 'powderblue' }} >
-                                            <Text style={styles.TextStyle}>
-                                                Distance
-                                    </Text>
-                                        </View>
 
 
-                                    </View>
 
-                                </View>
+
+
                             </View>
                         </View>
-                    </TouchableOpacity>
-                </Modal>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         );
     }
 
@@ -329,7 +350,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'flex-end',
         marginBottom: 799
-      },
+    },
     container: {
         flex: 1,
         alignItems: "center",
@@ -345,7 +366,7 @@ const styles = StyleSheet.create({
     containertwo: {
         alignItems: "center",
         alignSelf: 'stretch',
-        backgroundColor: "grey",
+        backgroundColor: 'steelblue',
         justifyContent: "center",
         height: 100
     },
