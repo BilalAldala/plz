@@ -3,10 +3,22 @@ import React, { Component } from 'react';
 import { StyleSheet, Text, View, TextInput, SafeAreaView, FlatList, ActivityIndicator } from 'react-native';
 import { Contacts } from 'expo'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
+import SearchAuto from "./SearchAuto";
 
 const adresses = [
     {
+        street: "English",
+        city: "Sydney",
+        country: "Australia"
+    }, {
+        street: "Estonian",
+        city: "Sydney",
+        country: "Australia"
+    }, {
+        street: "Esperanto",
+        city: "Sydney",
+        country: "Australia"
+    }, {
         street: "English",
         city: "Sydney",
         country: "Australia"
@@ -25,7 +37,8 @@ export default class SearchBar extends React.Component {
         super();
         this.state = {
             isLoading: false,
-            contacts: []
+            contacts: [],
+            searchText: "",
         };
     }
     loadContacts = async () => {
@@ -38,11 +51,14 @@ export default class SearchBar extends React.Component {
         this.loadContacts()
     }
     renderItem = ({ item }) => (
-        <View style={{ minHeight: 70, padding: 5 }}>
+        <>
+        {this.state.searchText.length > 1  &&
+        <View style={{ minHeight: 40, padding: 5 }}>
             <Text>
                 {item.street}
             </Text>
-        </View>
+        </View>}
+        </>
     );
     searchLocation = (value) => {
         const filteredLocations = this.state.inMemoryLocaions.filter(
@@ -54,13 +70,15 @@ export default class SearchBar extends React.Component {
                 return contactLowercase.indexOf(searchTermLowercase) > -1
             }
         )
-        this.setState({ contacts: filteredLocations });
+        this.setState({ contacts: filteredLocations, searchText: value });
     }
     render() {
         return (
 
             <View style={{ flex: 1 }}>
                 <SafeAreaView style={{ backgroundColor: '#2f363c' }} />
+                <SearchAuto/>
+                {/* '<SafeAreaView style={{ backgroundColor: '#2f363c' }} />
                 <TextInput
                     placeholder="Search"
                     placeholderTextColor="#dddddd"
@@ -87,7 +105,7 @@ export default class SearchBar extends React.Component {
                             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 50 }}>
                                 <Text style={{ color: '#bad555' }}>Result not found</Text></View>)}
                     />
-                </View>
+                </View>' */}
             </View>
 
         );

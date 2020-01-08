@@ -33,7 +33,8 @@ export default class Maps extends Component {
             longitude: null,
             locations: [{ longitude: null, latitude: null, distance: null }],
             locationLoaded: false,
-            visible: false
+            visible: false,
+            locationData: null
         };
     }
 
@@ -90,9 +91,14 @@ export default class Maps extends Component {
                     const id = location.id;
                     const longitude = location.geometry.coordinates[0][0];
                     const latitude = location.geometry.coordinates[0][1];
-                    const title = location.properties.ADDRESS;
-                    const description = "description";
-                    const a = { id, longitude, latitude, title, description };
+                    const ADDRESS = location.properties.ADDRESS;
+                    const CITY_DISTRICT = location.properties.CITY_DISTRICT;
+                    const OTHER_INFO = location.properties.OTHER_INFO;
+                    let DISTANCE;
+                    this.getDistanceOneToOne(59.19858, 17.83317, 59.2000008, 17.8999996).then(allData => {
+                        DISTANCE = allData; console.log(allData); console.log(DISTANCE)
+                    });
+                     const a = { id, longitude, latitude, ADDRESS, CITY_DISTRICT, OTHER_INFO, DISTANCE };
                     this.state.testArray.push(a);
                 });
                 this.save(this.state.testArray);
@@ -131,25 +137,21 @@ export default class Maps extends Component {
     async getDistanceOneToOne(lat1, lng1, lat2, lng2) {
         const Location1Str = lat1 + "," + lng1;
         const Location2Str = lat2 + "," + lng2;
-        const GOOGLE_API_KEY = "AIzaSyCdtgipOXd3oNKNmCyouxZuDWINJpZqFNM";
+        const GOOGLE_API_KEY = "AIzaSyAg0OKC_z6_2Q9ZO0LWFpu0_44giDXXKFs";
         let ApiURL = "https://maps.googleapis.com/maps/api/distancematrix/json?";
 
         let params = `origins=${Location1Str}&destinations=${Location2Str}&key=${GOOGLE_API_KEY}`; // you need to get a key
         let finalApiURL = `${ApiURL}${encodeURI(params)}`;
 
-        let fetchResult = await fetch(finalApiURL); // call API
-        let Result = await fetchResult.json(); // extract json
-
-        fetchResult
-            .then(response => response.json())
+        let Result;
+        let fetchResult = await fetch(finalApiURL).then(response => response.json())
             .then(allData => {
-                console.log(allData);
-            });
-
-        return Result.rows[0].elements[0].distance;
+                Result = allData.rows[0].elements[0].distance.value
+            }); // call API
+        return Result;
     }
 
-    getDistanceOneToOne(lat1, lon1, lat2, lon2, unit) {
+    async getDistanceOneToOne2(lat1, lon1, lat2, lon2, unit) {
         lat1 = 59.341641;
         lon1 = 18.071762;
         var radlat1 = (Math.PI * lat1) / 180;
@@ -186,7 +188,19 @@ export default class Maps extends Component {
         Linking.openURL(url);
     }
 
-    modal(place) {
+    modal() {
+        if (this.state.locationData == null) {
+            return;
+        }
+        var location = this.state.locationData;
+        const longitude = location.longitude;
+        const latitude = location.latitude;
+        const ADDRESS = location.ADDRESS;
+        const CITY_DISTRICT = location.CITY_DISTRICT;
+        const OTHER_INFO = location.OTHER_INFO;
+        const DISTANCE = location.DISTANCE;
+
+        console.log(DISTANCE);
         return (
             <Modal
                 transparent={true}
@@ -195,13 +209,13 @@ export default class Maps extends Component {
                 animationType={"slide"}
                 visible={this.state.visible}
                 onRequestClose={() => {
-                    this.setModalVisible(false)
+                    this.setModalVisible(false, null)
                 }}
             >
                 <TouchableOpacity
                     style={styles.container}
                     activeOpacity={1}
-                    onPressOut={() => { this.setModalVisible(false) }}
+                    onPressOut={() => { this.setModalVisible(false, null) }}
                 >
 
                     <View style={styles.containertwo}>
@@ -221,12 +235,12 @@ export default class Maps extends Component {
                                             size={24}
                                             color="white"
                                         />
-                                        {' Address'}
+                                        {ADDRESS}
                                     </Text>
                                 </View>
                                 <View style={{ height: 25, backgroundColor: 'steelblue' }} >
                                     <Text style={{ fontWeight: 'bold', color: 'white' }}>
-                                        CITY_DISTRICT
+                                        {CITY_DISTRICT}
                                     </Text>
                                 </View>
                                 <View style={{ height: 25, backgroundColor: 'steelblue' }} >
@@ -236,7 +250,7 @@ export default class Maps extends Component {
                                             size={24}
                                             color="white"
                                         />
-                                        {' Max_Hours'}
+                                        {OTHER_INFO}
                                     </Text>
                                 </View>
                                 <View style={{ width: 85, backgroundColor: 'steelblue' }} >
@@ -247,8 +261,7 @@ export default class Maps extends Component {
                                             size={24}
                                             color="white"
                                         />
-                                        {' Distance'}
-                                    </Text>
+                                        gf                                    </Text>
                                 </View>
 
                             </View>
@@ -268,14 +281,9 @@ export default class Maps extends Component {
                                             />
                                         }
                                         title=" Direction"
-                                        onPress={() => Alert.alert('Cannot press this one')}
+                                        onPress={() => this.setModalVisible(false, null)}
                                     />
                                 </View>
-
-
-
-
-
                             </View>
                         </View>
                     </View>
@@ -284,8 +292,13 @@ export default class Maps extends Component {
         );
     }
 
-    async setModalVisible(visible) {
-        await this.setState({ visible: visible });
+    getDirection(location) {
+
+    }
+
+    setModalVisible(visible, locationData) {
+        this.setState({ locationData });
+        this.setState({ visible });
     }
 
     render() {
@@ -306,40 +319,47 @@ export default class Maps extends Component {
             );
         } else {
             return (
-                <MapView
-                    minZoomLevel={10}
-                    style={{ flex: 1 }}
-                    provider={PROVIDER_GOOGLE}
-                    showsUserLocation
-                    initialRegion={{
-                        latitude: 59.341641,
-                        longitude: 18.071762,
-                        latitudeDelta: 0.01,
-                        longitudeDelta: 0.01
-                    }}
-                >
-                    {this.state.STHML_PARK_Locations.map(location => {
-                        const longitude = location.longitude;
-                        const latitude = location.latitude;
-                        const title = location.title;
-                        const description = location.description;
+                <>
+                    <MapView
+                        minZoomLevel={10}
+                        style={{ flex: 1 }}
+                        provider={PROVIDER_GOOGLE}
+                        showsUserLocation
+                        initialRegion={{
+                            latitude: 59.341641,
+                            longitude: 18.071762,
+                            latitudeDelta: 0.01,
+                            longitudeDelta: 0.01
+                        }}
+                    >
+                        {this.state.STHML_PARK_Locations.map(location => {
+                            const longitude = location.longitude;
+                            const latitude = location.latitude;
+                            const ADDRESS = location.ADDRESS;
+                            const CITY_DISTRICT = location.CITY_DISTRICT;
+                            const OTHER_INFO = location.OTHER_INFO;
+                            const DISTANCE = location.DISTANCE;
+                            return (
+                                <>
+                                    <MapView.Marker
+                                        key={location.id}
+                                        coordinate={{ longitude, latitude }}
+                                        title={ADDRESS}
+                                        description={CITY_DISTRICT}
+                                        pinColor={"blue"}
+                                        onPress={() => {
+                                            this.setModalVisible(true, location);
+                                        }}
+                                    >
 
-                        return (
-                            <MapView.Marker
-                                key={location.id}
-                                coordinate={{ longitude, latitude }}
-                                title={"title"}
-                                description={title}
-                                pinColor={"blue"}
-                                onPress={() => {
-                                    this.setModalVisible(true);
-                                }}
-                            >
-                                {this.modal(location)}
-                            </MapView.Marker>
-                        );
-                    })}
-                </MapView>
+                                    </MapView.Marker>
+                                </>
+                            );
+                        })}
+                    </MapView>
+                    {this.modal()}
+
+                </>
             );
         }
     }

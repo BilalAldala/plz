@@ -51,7 +51,7 @@ export default class Modal2 extends React.Component {
 
                     <View style={styles.containertwo}>
                         <Text style={styles.TextStyle}>
-                            dsad
+                            {title}
                         </Text>
 
                         <Button

@@ -78,9 +78,11 @@ class MapModel extends Component {
                     const id = location.id;
                     const longitude = location.geometry.coordinates[0][0];
                     const latitude = location.geometry.coordinates[0][1];
-                    const title = location.properties.ADDRESS;
-                    const description = "description";
-                    const a = { id, longitude, latitude, title, description };
+                    const ADDRESS = location.properties.ADDRESS;
+                    const CITY_DISTRICT = location.properties.CITY_DISTRICT;
+                    const OTHER_INFO=location.properties.OTHER_INFO;
+                    const DISTANCE=this.getDistanceOneToOne(59.19858,17.83317,59.2000008,17.8999996)
+                    const a = { id, longitude, latitude, ADDRESS,CITY_DISTRICT, OTHER_INFO,  DISTANCE};
                     this.state.testArray.push(a);
                 });
                 this.save(this.state.testArray);
@@ -107,25 +109,21 @@ class MapModel extends Component {
     async getDistanceOneToOne(lat1, lng1, lat2, lng2) {
         const Location1Str = lat1 + "," + lng1;
         const Location2Str = lat2 + "," + lng2;
-        const GOOGLE_API_KEY = "AIzaSyCdtgipOXd3oNKNmCyouxZuDWINJpZqFNM";
+        const GOOGLE_API_KEY = "AIzaSyAg0OKC_z6_2Q9ZO0LWFpu0_44giDXXKFs";
         let ApiURL = "https://maps.googleapis.com/maps/api/distancematrix/json?";
 
         let params = `origins=${Location1Str}&destinations=${Location2Str}&key=${GOOGLE_API_KEY}`; // you need to get a key
         let finalApiURL = `${ApiURL}${encodeURI(params)}`;
 
-        let fetchResult = await fetch(finalApiURL); // call API
-        let Result = await fetchResult.json(); // extract json
-
-        fetchResult
-            .then(response => response.json())
-            .then(allData => {
-                console.log(allData);
-            });
-
-        return Result.rows[0].elements[0].distance;
+        let Result;
+        let fetchResult = await fetch(finalApiURL).then(response => response.json())
+        .then(allData => {
+            Result=allData.rows[0].elements[0].distance.value
+        }); // call API
+        return Result;
     }
 
-    async getDistanceOneToOne(lat1, lon1, lat2, lon2, unit) {
+    async getDistanceOneToOne2(lat1, lon1, lat2, lon2, unit) {
         lat1 = 59.341641;
         lon1 = 18.071762;
         var radlat1 = (Math.PI * lat1) / 180;
@@ -177,12 +175,19 @@ class MapModel extends Component {
         } else if (this.state.location) {
             text = JSON.stringify(this.state.location);
         }
+        let text2
+        this.getDistanceOneToOne(59.19858,17.83317,59.2000008,17.8999996)
+        .then(allData => {
+            text2=(allData)
+        });;
         return (
             <View>
-                <Text >{text}</Text>
+                <Text >{text2}</Text>
+                
                 <Button
-                    title="Press me"
-                    onPress={() => this.getDirection(this.state.location)}
+                    title="Presssss me"
+                    onPress={() => {
+                        this.getDistanceOneToOne(59.19858,17.83317,59.2000008,17.8999996)}}
                 />
             </View>
         );
