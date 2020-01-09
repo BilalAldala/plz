@@ -1,411 +1,228 @@
 import React, { Component } from "react";
+import { NavigationEvents } from "react-navigation";
+
 import {
-    Alert,
-    Modal,
-    Platform,
-    Text,
-    View,
-    Linking,
-    StyleSheet,
-    AsyncStorage,
-    TouchableHighlight, TouchableOpacity
+  Alert,
+  Modal,
+  Platform,
+  Text,
+  View,
+  Linking,
+  StyleSheet,
+  AsyncStorage,
+  TouchableHighlight,
+  TouchableWithoutFeedback,
+  TouchableOpacity
 } from "react-native";
 import Constants from "expo-constants";
 import * as Location from "expo-location";
 import * as Permissions from "expo-permissions";
-import { Button } from 'react-native-elements';
+import { Button } from "react-native-elements";
 import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import Modal2 from './Modal'
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import Modal2 from "./Modal";
+import MapModel from "./MapModel";
 const { Marker } = MapView;
 const STORAGE_KEY = "@STHML_PARK_Locations";
 let locationData;
+
 export default class Maps extends Component {
-    constructor() {
-        super();
-        this.state = {
-            testArray: [],
-            STHML_PARK_Locations: null,
-            allData: null,
-            location: null,
-            errorMessage: null,
-            latitude: null,
-            longitude: null,
-            locations: [{ longitude: null, latitude: null, distance: null }],
-            locationLoaded: false,
-            visible: false,
-            locationData: null
-        };
-    }
-
-    componentDidMount() {
-        this.fetchLocation();
-        this.retrieveData().then(data => {
-            this.locationData = JSON.parse(data);
-            console.log("didMount");
-            this.setState({ STHML_PARK_Locations: this.locationData });
-
-            console.log("di dMount");
-        });
-        //this.openMap();
-    }
-
-    async retrieveData() {
-        try {
-            const STHML_PARK_Locations = await AsyncStorage.getItem(STORAGE_KEY);
-            if (STHML_PARK_Locations !== null) {
-                //console.log("111");
-                //console.log(STHML_PARK_Locations)
-                //this.setState({ STHML_PARK_Locations });
-                //console.log(this.state.STHML_PARK_Locations)
-                //console.log("111");
-                return STHML_PARK_Locations;
-            } else {
-                console.log("First > Time");
-                return this.fetchLocation;
-            }
-        } catch (e) {
-            alert("Failed to load name.");
-        }
-    }
-
-    save = async STHML_PARK_Locations => {
-        try {
-            await AsyncStorage.setItem(
-                STORAGE_KEY,
-                JSON.stringify(STHML_PARK_Locations)
-            );
-            this.setState({ STHML_PARK_Locations });
-        } catch (e) {
-            alert("Failed to save f´to file.");
-        }
+  constructor() {
+    super();
+    this.state = {
+      STHML_PARK_Locations: null,
+      visible: false,
+      locationDetailData: null,
+      MapModelObj: new MapModel()
     };
+    console.log("constructor");
+  }
 
-    async fetchLocation() {
-        fetch(
-            "https://openparking.stockholm.se/LTF-Tolken/v1/ptillaten/within?radius=100&lat=59.32784&lng=18.05306&outputFormat=json&apiKey=f7e487cd-1921-46a3-aaa5-95e38127e6a2"
-        )
-            .then(response => response.json())
-            .then(allData => {
-                allData.features.map(location => {
-                    const id = location.id;
-                    const longitude = location.geometry.coordinates[0][0];
-                    const latitude = location.geometry.coordinates[0][1];
-                    const ADDRESS = location.properties.ADDRESS;
-                    const CITY_DISTRICT = location.properties.CITY_DISTRICT;
-                    const OTHER_INFO = location.properties.OTHER_INFO;
-                    let DISTANCE;
-                    this.getDistanceOneToOne(59.19858, 17.83317, 59.2000008, 17.8999996).then(allData => {
-                        DISTANCE = allData; console.log(allData); console.log(DISTANCE)
-                    });
-                     const a = { id, longitude, latitude, ADDRESS, CITY_DISTRICT, OTHER_INFO, DISTANCE };
-                    this.state.testArray.push(a);
-                });
-                this.save(this.state.testArray);
-            });
+  componentDidMount() {
+    console.log("componentDidMount");
+    this.state.MapModelObj.retrieveData().then(data => {
+      this.setState({ STHML_PARK_Locations: JSON.parse(data) });
+    });
+  }
+
+  modal() {
+    if (this.state.locationDetailData == null) {
+      return;
     }
+    const location = this.state.locationDetailData;
+    const longitude = location.longitude;
+    const latitude = location.latitude;
+    const ADDRESS = location.ADDRESS;
+    const CITY_DISTRICT = location.CITY_DISTRICT;
+    const OTHER_INFO = location.OTHER_INFO;
+    const DISTANCE = location.DISTANCE;
 
-    componentWillMount() {
-        if (Platform.OS === "android" && !Constants.isDevice) {
-            this.setState({
-                errorMessage:
-                    "Oops, this will not work on Sketch in an Android emulator. Try it on your device!"
-            });
-        } else {
-            this._getLocationAsync();
-        }
-    }
-
-    _getLocationAsync = async () => {
-        let { status } = await Permissions.askAsync(Permissions.LOCATION);
-        if (status !== "granted") {
-            this.setState({
-                errorMessage: "Permission to access location was denied"
-            });
-        }
-
-        let location = await (await Location.getCurrentPositionAsync({})).coords;
-        this.setState({ location });
-        this.setState({
-            latitude: await (await Location.getCurrentPositionAsync({})).coords
-                .latitude,
-            longitude: await (await Location.getCurrentPositionAsync({})).coords
-                .longitude
-        });
-    };
-
-    async getDistanceOneToOne(lat1, lng1, lat2, lng2) {
-        const Location1Str = lat1 + "," + lng1;
-        const Location2Str = lat2 + "," + lng2;
-        const GOOGLE_API_KEY = "AIzaSyAg0OKC_z6_2Q9ZO0LWFpu0_44giDXXKFs";
-        let ApiURL = "https://maps.googleapis.com/maps/api/distancematrix/json?";
-
-        let params = `origins=${Location1Str}&destinations=${Location2Str}&key=${GOOGLE_API_KEY}`; // you need to get a key
-        let finalApiURL = `${ApiURL}${encodeURI(params)}`;
-
-        let Result;
-        let fetchResult = await fetch(finalApiURL).then(response => response.json())
-            .then(allData => {
-                Result = allData.rows[0].elements[0].distance.value
-            }); // call API
-        return Result;
-    }
-
-    async getDistanceOneToOne2(lat1, lon1, lat2, lon2, unit) {
-        lat1 = 59.341641;
-        lon1 = 18.071762;
-        var radlat1 = (Math.PI * lat1) / 180;
-        var radlat2 = (Math.PI * lat2) / 180;
-        var theta = lon1 - lon2;
-        var radtheta = (Math.PI * theta) / 180;
-        var dist =
-            Math.sin(radlat1) * Math.sin(radlat2) +
-            Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
-        dist = Math.acos(dist);
-        dist = (dist * 180) / Math.PI;
-        dist = dist * 60 * 1.1515;
-        if (unit == "K") {
-            dist = dist * 1.609344;
-        }
-        if (unit == "M") {
-            dist = dist * 0.8684;
-        }
-        return dist;
-    }
-
-    getDirection() {
-        const latitude = "40.7127753";
-        const longitude = "-74.0059728";
-        const label = "New York, NY, USA";
-
-        const url = Platform.select({
-            ios: "maps:" + latitude + "," + longitude + "?q=" + label,
-            android: "geo:" + latitude + "," + longitude + "?q=" + label
-        });
-        console.log(
-            this.getDistanceOneToOne(59.2025453, 17.7903157, 59.2114643, 17.8628047, "M")
-        );
-        Linking.openURL(url);
-    }
-
-    modal() {
-        if (this.state.locationData == null) {
-            return;
-        }
-        var location = this.state.locationData;
-        const longitude = location.longitude;
-        const latitude = location.latitude;
-        const ADDRESS = location.ADDRESS;
-        const CITY_DISTRICT = location.CITY_DISTRICT;
-        const OTHER_INFO = location.OTHER_INFO;
-        const DISTANCE = location.DISTANCE;
-
-        console.log(DISTANCE);
-        return (
-            <Modal
-                transparent={true}
-                backdropColor={"green"}
-                backdropOpacity={1}
-                animationType={"slide"}
-                visible={this.state.visible}
-                onRequestClose={() => {
-                    this.setModalVisible(false, null)
+    return (
+      <Modal
+        transparent={true}
+        backdropColor={"green"}
+        backdropOpacity={1}
+        animationType={"slide"}
+        visible={this.state.visible}
+        onRequestClose={() => {
+          this.setModalVisible(false, null);
+        }}
+      >
+        <TouchableOpacity
+          style={styles.container}
+          activeOpacity={1}
+          onPressOut={() => {
+            this.setModalVisible(false, null);
+          }}
+        >
+          <View style={styles.containertwo}>
+            <View style={{ flex: 1, flexDirection: "row" }}>
+              <View
+                style={{
+                  flex: 1,
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "stretch"
                 }}
-            >
-                <TouchableOpacity
-                    style={styles.container}
-                    activeOpacity={1}
-                    onPressOut={() => { this.setModalVisible(false, null) }}
-                >
+              >
+                <View style={{flexDirection: "row" }}>
+                  <Icon name="map-marker" size={24} color="blue" />
+                    <Text style={{ fontWeight: "bold" }}>
+                      {ADDRESS}
+                      {"\n"}
+                      {CITY_DISTRICT}
+                    </Text>
+                </View>
+                <View style={{ height: 25 }}>
+                  <Text style={{ fontWeight: "bold" }}>
+                    <Icon name="timer" size={24} color="blue" />
+                    {OTHER_INFO}
+                  </Text>
+                </View>
+                <View style={{ height: 25 }}>
+                  <Text style={{ fontWeight: "bold" }}>
+                    <Icon name="map-marker-distance" size={24} color="blue" />
+                    {" gk"}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={{ paddingTop: 20 }}
+                onPress={() => this.state.MapModelObj.getDirection(location)}
+              >
+                <View>
+                  <Icon name="directions" size={70} color="blue" />
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    );
+  }
 
-                    <View style={styles.containertwo}>
+  setModalVisible(visible, locationDetailData) {
+    this.setState({ locationDetailData });
+    this.setState({ visible });
+  }
 
-
-                        <View style={{ flex: 1, flexDirection: 'row' }}>
-                            <View style={{
-                                flex: 1,
-                                flexDirection: 'column',
-                                justifyContent: 'center',
-                                alignItems: 'stretch',
-                            }}>
-                                <View style={{ height: 25, backgroundColor: 'steelblue' }} >
-                                    <Text style={{ fontWeight: 'bold', color: 'white' }}>
-                                        <Icon
-                                            name="map-marker"
-                                            size={24}
-                                            color="white"
-                                        />
-                                        {ADDRESS}
-                                    </Text>
-                                </View>
-                                <View style={{ height: 25, backgroundColor: 'steelblue' }} >
-                                    <Text style={{ fontWeight: 'bold', color: 'white' }}>
-                                        {CITY_DISTRICT}
-                                    </Text>
-                                </View>
-                                <View style={{ height: 25, backgroundColor: 'steelblue' }} >
-                                    <Text style={{ fontWeight: 'bold', color: 'white' }}>
-                                        <Icon
-                                            name="timer"
-                                            size={24}
-                                            color="white"
-                                        />
-                                        {OTHER_INFO}
-                                    </Text>
-                                </View>
-                                <View style={{ width: 85, backgroundColor: 'steelblue' }} >
-
-                                    <Text style={{ fontWeight: 'bold', color: 'white' }}>
-                                        <Icon
-                                            name="map-marker-distance"
-                                            size={24}
-                                            color="white"
-                                        />
-                                        gf                                    </Text>
-                                </View>
-
-                            </View>
-                            <View style={{ width: 100, height: 100 }} >
-                                <View style={{
-                                    flex: 1,
-                                    flexDirection: 'column',
-                                    justifyContent: 'center',
-                                    alignItems: 'stretch',
-                                    height: 200,
-                                }}><Button
-                                        icon={
-                                            <Icon
-                                                name="directions"
-                                                size={24}
-                                                color="white"
-                                            />
-                                        }
-                                        title=" Direction"
-                                        onPress={() => this.setModalVisible(false, null)}
-                                    />
-                                </View>
-                            </View>
-                        </View>
-                    </View>
-                </TouchableOpacity>
-            </Modal>
-        );
-    }
-
-    getDirection(location) {
-
-    }
-
-    setModalVisible(visible, locationData) {
-        this.setState({ locationData });
-        this.setState({ visible });
-    }
-
-    render() {
-        if (this.state.STHML_PARK_Locations == null) {
-            return (
-                <MapView
-                    minZoomLevel={10}
-                    style={{ flex: 1 }}
-                    provider={PROVIDER_GOOGLE}
-                    showsUserLocation
-                    initialRegion={{
-                        latitude: 59.341641,
-                        longitude: 18.071762,
-                        latitudeDelta: 0.01,
-                        longitudeDelta: 0.01
-                    }}
-                ></MapView>
-            );
-        } else {
-            return (
+  render() {
+    if (this.state.STHML_PARK_Locations == null) {
+      return (
+        <MapView
+          minZoomLevel={10}
+          style={{ flex: 1 }}
+          provider={PROVIDER_GOOGLE}
+          showsUserLocation
+          initialRegion={{
+            latitude: 59.341641,
+            longitude: 18.071762,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01
+          }}
+        ></MapView>
+      );
+    } else {
+      return (
+        <>
+          <MapView
+            minZoomLevel={10}
+            style={{ flex: 1 }}
+            provider={PROVIDER_GOOGLE}
+            showsUserLocation
+            initialRegion={{
+              latitude: 59.341641,
+              longitude: 18.071762,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01
+            }}
+          >
+            {this.state.STHML_PARK_Locations.map(location => {
+              const longitude = location.longitude;
+              const latitude = location.latitude;
+              const ADDRESS = location.ADDRESS;
+              const CITY_DISTRICT = location.CITY_DISTRICT;
+              const OTHER_INFO = location.OTHER_INFO;
+              const DISTANCE = location.DISTANCE;
+              return (
                 <>
-                    <MapView
-                        minZoomLevel={10}
-                        style={{ flex: 1 }}
-                        provider={PROVIDER_GOOGLE}
-                        showsUserLocation
-                        initialRegion={{
-                            latitude: 59.341641,
-                            longitude: 18.071762,
-                            latitudeDelta: 0.01,
-                            longitudeDelta: 0.01
-                        }}
-                    >
-                        {this.state.STHML_PARK_Locations.map(location => {
-                            const longitude = location.longitude;
-                            const latitude = location.latitude;
-                            const ADDRESS = location.ADDRESS;
-                            const CITY_DISTRICT = location.CITY_DISTRICT;
-                            const OTHER_INFO = location.OTHER_INFO;
-                            const DISTANCE = location.DISTANCE;
-                            return (
-                                <>
-                                    <MapView.Marker
-                                        key={location.id}
-                                        coordinate={{ longitude, latitude }}
-                                        title={ADDRESS}
-                                        description={CITY_DISTRICT}
-                                        pinColor={"blue"}
-                                        onPress={() => {
-                                            this.setModalVisible(true, location);
-                                        }}
-                                    >
-
-                                    </MapView.Marker>
-                                </>
-                            );
-                        })}
-                    </MapView>
-                    {this.modal()}
-
+                  <MapView.Marker
+                    key={location.id}
+                    coordinate={{ longitude, latitude }}
+                    title={ADDRESS}
+                    description={CITY_DISTRICT}
+                    pinColor={"blue"}
+                    onPress={() => {
+                      this.setModalVisible(true, location);
+                    }}
+                  ></MapView.Marker>
                 </>
-            );
-        }
+              );
+            })}
+          </MapView>
+          {this.modal()}
+        </>
+      );
     }
+  }
 }
 
 const styles = StyleSheet.create({
-    bottom: {
-        flex: 1,
-        justifyContent: 'flex-end',
-        marginBottom: 799
-    },
-    container: {
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        paddingTop: Constants.statusBarHeight,
-        backgroundColor: "#ecf0f1"
-    },
-    container: {
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center"
-    },
-    containertwo: {
-        alignItems: "center",
-        alignSelf: 'stretch',
-        backgroundColor: 'steelblue',
-        justifyContent: "center",
-        height: 100
-    },
-    leftContainer: {
-        flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'flex-start',
-        backgroundColor: 'green'
-    },
-    rightContainer: {
-        flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-        backgroundColor: 'red',
-    },
-    paragraph: {
-        margin: 24,
-        fontSize: 18,
-        textAlign: "center"
-    }
+  bottom: {
+    flex: 1,
+    justifyContent: "flex-end",
+    marginBottom: 799
+  },
+  btnContainer: {
+    fontSize: 24,
+    color: "white"
+  },
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: Constants.statusBarHeight,
+    backgroundColor: "#ecf0f1"
+  },
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  containertwo: {
+    width: "100%",
+    backgroundColor: "white",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "absolute", //Here is the trick
+    bottom: 90, //Here is the trick
+    borderBottomColor: "blue",
+    borderBottomWidth: 3
+  },
+
+  paragraph: {
+    margin: 24,
+    fontSize: 18,
+    textAlign: "center"
+  }
 });

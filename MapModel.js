@@ -17,7 +17,10 @@ import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Modal2 from './Modal'
 const { Marker } = MapView;
-const STORAGE_KEY = "@STHML_PARK_Locations";
+const STORAGE_KEY_Locations = "@STHML_PARK_Locations";
+const STORAGE_KEY_Choosed_Location = "@STHML_PARK_Choosed_Location";
+const STORAGE_KEY_Settings = "@STHML_PARK_Settings";
+
 let locationData;
 
 
@@ -34,22 +37,26 @@ class MapModel extends Component {
             longitude: null,
             locations: [{ longitude: null, latitude: null, distance: null }],
             locationLoaded: false,
-            visible: false
+            visible: false,
+            radius: null
         };
     }
-    async retrieveData() {
+    async retrieveData() { 
         try {
-            const STHML_PARK_Locations = await AsyncStorage.getItem(STORAGE_KEY);
+            const STHML_PARK_Locations = await AsyncStorage.getItem(STORAGE_KEY_Locations);
             if (STHML_PARK_Locations !== null) {
+                console.log("First > Time");
+
                 //console.log("111");
                 //console.log(STHML_PARK_Locations)
                 //this.setState({ STHML_PARK_Locations });
                 //console.log(this.state.STHML_PARK_Locations)
                 //console.log("111");
+                this.fetchParkinLocation(59.32784,18.05306);
                 return STHML_PARK_Locations;
             } else {
                 console.log("First > Time");
-                return this.fetchLocation;
+                return this.fetchParkinLocation(59.32784,18.05306);
             }
         } catch (e) {
             alert("Failed to load name.");
@@ -59,7 +66,7 @@ class MapModel extends Component {
     save = async STHML_PARK_Locations => {
         try {
             await AsyncStorage.setItem(
-                STORAGE_KEY,
+                STORAGE_KEY_Locations,
                 JSON.stringify(STHML_PARK_Locations)
             );
             this.setState({ STHML_PARK_Locations });
@@ -68,9 +75,20 @@ class MapModel extends Component {
         }
     };
 
-    async fetchParkinLocation() {
+    async fetchParkinLocation(latitude,longitude) {
+
+        console.log(latitude)
+        let radius;
+        await AsyncStorage.getItem(STORAGE_KEY_Settings).then(data => {
+            //this.setState({ radius: JSON.parse(data).vehicle });
+            radius=(JSON.parse(data).distance)
+            console.log(radius)
+          });;
+
+        const link="https://openparking.stockholm.se/LTF-Tolken/v1/ptillaten/within?radius="+radius+"&lat="+latitude+"&lng="+longitude+"&outputFormat=json&apiKey=f7e487cd-1921-46a3-aaa5-95e38127e6a2";
+
         fetch(
-            "https://openparking.stockholm.se/LTF-Tolken/v1/ptillaten/within?radius=100&lat=59.32784&lng=18.05306&outputFormat=json&apiKey=f7e487cd-1921-46a3-aaa5-95e38127e6a2"
+            link
         )
             .then(response => response.json())
             .then(allData => {

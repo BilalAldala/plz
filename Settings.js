@@ -1,11 +1,12 @@
 import React from 'react';
-import { StyleSheet, StatusBar, Alert, Text, View, Slider, TouchableOpacity, Switch, ActivityIndicator, ScrollView, Platform } from 'react-native'
+import { AsyncStorage, StyleSheet, StatusBar, Alert, Text, View, Slider, TouchableOpacity, Switch, ActivityIndicator, ScrollView, Platform } from 'react-native'
 import { TextField } from 'react-native-material-textfield';
 import { Dropdown } from 'react-native-material-dropdown';
 import { Button } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 
+const STORAGE_KEY = "@STHML_PARK_Settings";
 
 export default class Settings extends React.Component {
     constructor(props) {
@@ -18,9 +19,9 @@ export default class Settings extends React.Component {
 
         this.state = {
             vehicle: 'Car',
-            distance: '0m',
+            distance: '100',
         }
-    }
+    }   
 
     onChangeText(text) {
         ['distance', 'vehicle']
@@ -33,6 +34,18 @@ export default class Settings extends React.Component {
 
     updateRef(name, ref) {
         this[name] = ref;
+    }
+    async confirmSettings(){
+        let { vehicle, distance } = this.state;
+        
+        const STHML_PARK_Settings = { vehicle, distance };
+        console.log(STHML_PARK_Settings)
+
+        await AsyncStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(STHML_PARK_Settings)
+        );
+        
     }
 
     render() {
@@ -69,7 +82,7 @@ export default class Settings extends React.Component {
                                 ref={this.distanceRef}
                                 value={distance}
                                 onChangeText={this.onChangeText}
-                                label='Distance'
+                                label='Distance (m)'
                                 data={distanceData}
                             />
                         </View>
@@ -84,13 +97,15 @@ export default class Settings extends React.Component {
                             color="white"
                         />
                     }
-                    title=" Confrim"
-                    onPress={() => this.setModalVisible(false, null)}
+                    title=" Confirm"
+                    onPress={() => this.confirmSettings()}
                 />
             </View>
 
         );
     }
+
+
 
 }
 
@@ -147,8 +162,11 @@ const vehicleData = [
 ];
 
 const distanceData = [
-    { value: '100m' },
-    { value: '200m' },
-    { value: '300m' },
+    { value: '100' },
+    { value: '200' },
+    { value: '300' },
+    { value: '400' },
+    { value: '500' },
+
 ];
 
