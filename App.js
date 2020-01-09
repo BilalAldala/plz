@@ -8,6 +8,8 @@ import SearchBar from './SearchBar'
 import Maps from './Map'
 import AdressList from './List'
 import MapModel from './MapModel'
+import Settings from './Settings'
+
 
 
 export class Map extends Component {
@@ -19,12 +21,11 @@ export class Map extends Component {
     );
   }
 }
-export class Settings extends Component {
+export class Setting extends Component {
   render() {
     return (
-      <View style={styles.container}>
-        <Text>Settings</Text>
-        <MapModel />
+      <View style={{ flex: 1 }}>
+        <Settings />
       </View>
     );
   }
@@ -58,7 +59,7 @@ export default createMaterialBottomTabNavigator({
     }
   },
   Settings: {
-    screen: Settings, navigationOptions: {
+    screen: Setting, navigationOptions: {
       tabBarLabel: 'Settings',
       tabBarIcon: ({ tintColor }) => (
         <Icon name="settings" size={24} />
