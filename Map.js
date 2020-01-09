@@ -30,6 +30,8 @@ export default class Maps extends Component {
   constructor() {
     super();
     this.state = {
+      currentLongitude :null,
+      currentLatitude : null,
       STHML_PARK_Locations: null,
       visible: false,
       locationDetailData: null,
@@ -39,10 +41,16 @@ export default class Maps extends Component {
   }
 
   componentDidMount() {
-    console.log("componentDidMount");
+    this.state.MapModelObj.getCurrentPosition().then(data => {
+      this.setState({ currentLatitude: data.latitude, currentLongitude: data.longitude });
+    });
     this.state.MapModelObj.retrieveData().then(data => {
       this.setState({ STHML_PARK_Locations: JSON.parse(data) });
     });
+  }
+
+  componentWillReceiveProps() {
+    
   }
 
   modal() {
@@ -102,7 +110,7 @@ export default class Maps extends Component {
                 <View style={{ height: 25 }}>
                   <Text style={{ fontWeight: "bold" }}>
                     <Icon name="map-marker-distance" size={24} color="blue" />
-                    {" gk"}
+                    {DISTANCE}
                   </Text>
                 </View>
               </View>
@@ -127,6 +135,7 @@ export default class Maps extends Component {
   }
 
   render() {
+    
     if (this.state.STHML_PARK_Locations == null) {
       return (
         <MapView

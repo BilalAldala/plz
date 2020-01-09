@@ -52,8 +52,6 @@ const adresses = [
   }
 ];
 
-
-
 export default class SearchBar extends React.Component {
   constructor() {
     super();
@@ -65,12 +63,14 @@ export default class SearchBar extends React.Component {
     };
   }
   loadAdresses = async () => {
-    this.state.MapModelObj.fetchParkinLocation(59.32784, 18.05306);
-    this.state.MapModelObj.retrieveData().then(data => {
-      this.setState({ STHML_PARK_Locations: JSON.parse(data), isLoading: true })      
+    console.log("loadAdresses");
+
+    await this.state.MapModelObj.retrieveData().then(data => {
+      this.setState({
+        STHML_PARK_Locations: JSON.parse(data),
+        isLoading: true
+      });
     });
-console.log(this.state.STHML_PARK_Locations)
-    
   };
   componentDidMount() {
     this.setState({ isLoading: true });
@@ -78,6 +78,7 @@ console.log(this.state.STHML_PARK_Locations)
       this.setState({ STHML_PARK_Locations: JSON.parse(data) });
     });
   }
+
   renderItem = ({ item }) => (
     <>
       <View style={{ minHeight: 40, padding: 5 }}>
@@ -85,15 +86,28 @@ console.log(this.state.STHML_PARK_Locations)
       </View>
     </>
   );
-  showList(data, details) {
-    this.loadAdresses();
+  async showList(data, details) {
+    const latitude = details.geometry.location.lat;
+    const longitude = details.geometry.location.lng;
+    const location = { latitude, longitude };
+console.log(data, details)
+    await this.state.MapModelObj.fetchParkinLocation(location);
+    await this.loadAdresses();
+
+    /*
+    this.state.MapModelObj.fetchParkinLocation(59.32784, 18.05306);
+    this.state.MapModelObj.retrieveData().then(data => {
+      this.setState({ STHML_PARK_Locations: JSON.parse(data), isLoading: true })      
+    }); */
   }
-  
+
   render() {
     return (
       <View style={{ flex: 1 }}>
         <SafeAreaView style={{ backgroundColor: "#2f363c" }} />
-
+        <View>
+          <Icon></Icon>
+        </View>
         <GooglePlacesAutocomplete
           placeholder="Search for place"
           minLength={2} // minimum length of text to search
@@ -161,7 +175,9 @@ console.log(this.state.STHML_PARK_Locations)
         <FlatList
           style={styles.container}
           data={this.state.STHML_PARK_Locations}
-          renderItem={({ item }) => <Item title={item.ADDRESS} />}
+          renderItem={({ item }) => (
+            <Item location={item} MapModelObj={this.state.MapModelObj} />
+          )}
           keyExtractor={item => item.id}
         />
       </View>
@@ -169,52 +185,58 @@ console.log(this.state.STHML_PARK_Locations)
   }
 }
 
-
-function Item({ title }) {
-    return (
-      <View style={styles.containertwo}>
-        <View style={{ flex: 1, flexDirection: "row" }}>
-          <View
-            style={{
-              flex: 1,
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "stretch"
-            }}
-          >
-            <View style={{ flexDirection: "row" }}>
-              <Icon name="map-marker" size={24} color="blue" />
-              <Text style={{ fontWeight: "bold" }}>
-                {title}
-                {"\n"}
-                {title}
-              </Text>
-            </View>
-            <View style={{ height: 25 }}>
-              <Text style={{ fontWeight: "bold" }}>
-                <Icon name="timer" size={24} color="blue" />
-                {title}
-              </Text>
-            </View>
-            <View style={{ height: 25 }}>
-              <Text style={{ fontWeight: "bold" }}>
-                <Icon name="map-marker-distance" size={24} color="blue" />
-                {" gk"}
-              </Text>
-            </View>
+function Item({ location, MapModelObj }) {
+  const longitude = location.longitude;
+  const latitude = location.latitude;
+  const ADDRESS = location.ADDRESS;
+  const CITY_DISTRICT = location.CITY_DISTRICT;
+  const OTHER_INFO = location.OTHER_INFO;
+  const DISTANCE = location.DISTANCE;
+  console.log(DISTANCE);
+  return (
+    <View style={styles.containertwo}>
+      <View style={{ flex: 1, flexDirection: "row" }}>
+        <View
+          style={{
+            flex: 1,
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "stretch"
+          }}
+        >
+          <View style={{ flexDirection: "row" }}>
+            <Icon name="map-marker" size={24} color="blue" />
+            <Text style={{ fontWeight: "bold" }}>
+              {ADDRESS}
+              {"\n"}
+              {CITY_DISTRICT}
+            </Text>
           </View>
-          <TouchableOpacity
-            style={{ paddingTop: 10, paddingRight: 10 }}
-            onPress={() => this.state.MapModelObj.getDirection(location)}
-          >
-            <View>
-              <Icon name="directions" size={70} color="blue" />
-            </View>
-          </TouchableOpacity>
+          <View style={{ height: 25 }}>
+            <Text style={{ fontWeight: "bold" }}>
+              <Icon name="timer" size={24} color="blue" />
+              {OTHER_INFO}
+            </Text>
+          </View>
+          <View style={{ height: 25 }}>
+            <Text style={{ fontWeight: "bold" }}>
+              <Icon name="map-marker-distance" size={24} color="blue" />
+              {"DISTANCE"}
+            </Text>
+          </View>
         </View>
+        <TouchableOpacity
+          style={{ paddingTop: 10, paddingRight: 10 }}
+          onPress={() => MapModelObj.getDirection(location)}
+        >
+          <View>
+            <Icon name="directions" size={70} color="blue" />
+          </View>
+        </TouchableOpacity>
       </View>
-    );
-  }
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
   container: {
